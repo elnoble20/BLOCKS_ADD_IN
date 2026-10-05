@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RevitAddIns>
+  <AddIn Type="Application">
+    <Name>BlockToFamily</Name>
+    <Assembly>BlockToFamily.dll</Assembly>
+    <AddInId>993A5A47-9F19-4F55-8F1B-7352368E302A</AddInId>
+    <FullClassName>BlockToFamily.App</FullClassName>
+    <VendorId>ELNB</VendorId>
+    <VendorDescription>elnoble20</VendorDescription>
+  </AddIn>
   <AddIn Type="Command">
     <Name>Place Families From DWG Blocks</Name>
     <Assembly>BlockToFamily.dll</Assembly>

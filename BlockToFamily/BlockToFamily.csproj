@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Revit 2027 runs on .NET 10 -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <AssemblyName>BlockToFamily</AssemblyName>
+    <RootNamespace>BlockToFamily</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Option A: direct references to the installed Revit 2027 assemblies -->
+    <Reference Include="RevitAPI">
+      <HintPath>C:\Program Files\Autodesk\Revit 2027\RevitAPI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>C:\Program Files\Autodesk\Revit 2027\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <!-- Option B (instead of the above): NuGet reference packages
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="2027.*" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="2027.*" />
+    -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="BlockToFamily.addin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="DeployToRevit" AfterTargets="Build"
+          Condition="'$(OS)' == 'Windows_NT' and '$(DeployToRevit)' != 'false'">
+    <PropertyGroup>
+      <RevitAddinsDirectory>$(AppData)\Autodesk\Revit\Addins\2027\</RevitAddinsDirectory>
+    </PropertyGroup>
+    <MakeDir Directories="$(RevitAddinsDirectory)" ContinueOnError="WarnAndContinue" />
+    <Copy SourceFiles="$(TargetPath);$(TargetDir)BlockToFamily.addin"
+          DestinationFolder="$(RevitAddinsDirectory)"
+          SkipUnchangedFiles="true" ContinueOnError="WarnAndContinue" />
+  </Target>
+</Project>
