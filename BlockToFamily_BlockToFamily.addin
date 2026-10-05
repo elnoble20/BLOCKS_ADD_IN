@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Command">
+    <Name>Place Families From DWG Blocks</Name>
+    <Assembly>BlockToFamily.dll</Assembly>
+    <AddInId>7A3E1C52-9B4D-4F0E-8E1A-2B6C5D4E3F10</AddInId>
+    <FullClassName>BlockToFamily.PlaceFromBlocksCommand</FullClassName>
+    <Text>Blocks → Families</Text>
+    <Description>Reads block references from a selected DWG import/link and places family types with matching names.</Description>
+    <VendorId>ELNB</VendorId>
+    <VendorDescription>elnoble20</VendorDescription>
+  </AddIn>
+</RevitAddIns>
