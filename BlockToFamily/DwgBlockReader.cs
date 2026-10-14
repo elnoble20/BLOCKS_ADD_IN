@@ -35,7 +35,7 @@ public static class DwgBlockReader
                 {
                     // Each nested GeometryInstance corresponds to a block reference.
                     if (nested is GeometryInstance block)
-                        results.Add(ToInfo(block, baseTransform));
+                        results.Add(ToInfo(block, baseTransform, import.Document));
                 }
             }
         }
@@ -43,10 +43,13 @@ public static class DwgBlockReader
         return results;
     }
 
-    private static BlockReferenceInfo ToInfo(GeometryInstance block, Transform baseTransform)
+    private static BlockReferenceInfo ToInfo(GeometryInstance block, Transform baseTransform, Document doc)
     {
-        // Symbol.Name is the DWG block name (e.g. "CHAIR-01").
-        string name = block.Symbol?.Name ?? string.Empty;
+        // Resolve the DWG block name through its symbol geometry ID.
+        SymbolGeometryId symbolGeometryId = block.GetSymbolGeometryId();
+        string name = symbolGeometryId.SymbolId != ElementId.InvalidElementId
+            ? doc.GetElement(symbolGeometryId.SymbolId)?.Name ?? string.Empty
+            : string.Empty;
 
         Transform world = baseTransform.Multiply(block.Transform);
         XYZ origin = world.Origin;
