@@ -1,63 +1,41 @@
-# BlockToFamily
+# BlockToFamily — Revit DWG Block Reader, CSV Validator & Family Placer
 
-A Revit add-in that reads block references from a selected DWG import or link.
-Each block name is matched case-insensitively to a loaded family type name first,
-then to a family name as a fallback. Matching instances are placed at the block's
-XY insertion point on the resolved level, with the block's rotation about Z.
+A C# Revit add-in (compatible with **Revit 2025/2026 on .NET 8** and **Revit 2027 on .NET 10**) that automates converting 2D/3D CAD block layouts into native Revit families:
 
-## Requirements
+1. **Read DWG Block Names & Transforms**: Inspects a selected linked or imported DWG (`ImportInstance`), recursively walks nested `GeometryInstance` objects using `GetSymbolGeometryId().SymbolId`, strips `<filename>.dwg.` prefixes, filters out anonymous AutoCAD blocks (`*U...`, `*D...`), and extracts each block's name, layer, world `(X, Y, Z)` insertion point, rotation angle, scale, and mirror state.
+2. **Extract Block Lists to CSV**: Exports two UTF-8 CSV files:
+   - `<DwgName>_BlockValidation.csv`: Unique block names, occurrence counts, DWG layer, validation status (`Valid` vs. `Missing`), matched Revit Family & Type names, Category, and `FamilyPlacementType`.
+   - `<DwgName>_BlockInstances.csv`: Every individual block reference with exact `OriginX_Ft`, `OriginY_Ft`, `OriginZ_Ft`, `RotationDegrees`, `ScaleX`, `ScaleY`, `IsMirrored`, and validation match.
+3. **Validate Against Current Revit Families**: Compares DWG block names against all loaded placeable `FamilySymbol`s in the active Revit model (matching by **Type Name** first, **Family Name** second, or `Family : Type`), and displays an interactive **WPF Validation & Mapping Window** where you can remap any unmatched DWG block name via dropdown or import an edited CSV mapping file.
+4. **Place Families on Top of Each Block**: Activates matched `FamilySymbol`s, places `FamilyInstance`s at each DWG block's exact coordinates on the host `Level`, rotates each element around the Z-axis to match the CAD block orientation, and tags `Comments` with `DWG_BLOCK:<BlockName>` so re-running can automatically skip already-placed instances.
 
-- Autodesk Revit 2027 (runs on .NET 10), installed on Windows.
-- .NET 10 SDK.
-- Visual Studio 2026 with .NET desktop development, or the `dotnet` CLI.
-- Matching family types loaded in the Revit document.
+## Project Structure
 
-## Build and install
+| File | Responsibility |
+| :--- | :--- |
+| `BlockToFamily/BlockToFamily.csproj` | Multi-targets `net8.0-windows` (Revit 2025) and `net10.0-windows` (Revit 2027) with local `RevitAPI.dll` references and `Nice3point.Revit.Api` NuGet fallback for CI. |
+| `BlockToFamily/BlockToFamily.addin` | Registers the `BlockToFamily.App` ribbon application and both external commands (`PlaceFromBlocksCommand` and `ExportBlocksCsvCommand`). |
+| `BlockToFamily/App.cs` | Creates the **Blocks** ribbon tab and **DWG** panel (reusing the panel safely if another add-in already created it). |
+| `BlockToFamily/DwgBlockReader.cs` | Traverses `ImportInstance` geometry to extract `BlockReferenceInfo` records (name, layer, XYZ origin, Z rotation, scale, mirror check). |
+| `BlockToFamily/FamilyValidator.cs` | Indexes loaded `FamilySymbol`s (`FamilyCatalog`) and validates unique DWG block names (`BlockValidationSummary`). |
+| `BlockToFamily/CsvBlockService.cs` | Exports summary/instance CSV files and imports user-edited CSV family mappings. |
+| `BlockToFamily/BlockValidationWindow.cs` | Pure-C# WPF window with live validation counts, CSV export/import buttons, and per-block `Family : Type` remapping dropdowns. |
+| `BlockToFamily/FamilyPlacementService.cs` | Executes transactional symbol activation, `NewFamilyInstance` placement, Z-rotation, and duplicate-prevention tracking. |
+| `BlockToFamily/ExportBlocksCsvCommand.cs` | Read-only ribbon command to extract and validate DWG block lists directly to CSV. |
+| `BlockToFamily/PlaceFromBlocksCommand.cs` | Full workflow command that launches the validation dialog and places families on top of each DWG block. |
 
-Open `BlockToFamily.sln` in Visual Studio and build Release, or run from the
-repository root:
+## Build & Installation
 
-```powershell
-dotnet restore BlockToFamily.sln
-dotnet build BlockToFamily.sln -c Release --no-restore
+### Build via .NET CLI or Visual Studio
+```bash
+# Build using local Revit installation (Revit 2025 and/or 2027):
+dotnet build BlockToFamily/BlockToFamily.csproj -c Release
+
+# Or build anywhere (including GitHub Actions CI) using Nice3point NuGet packages:
+dotnet build BlockToFamily/BlockToFamily.csproj -c Release -p:UseNuGetRevitApi=true
 ```
 
-The project references `RevitAPI.dll` and `RevitAPIUI.dll` from
-`C:\Program Files\Autodesk\Revit 2027\`. These assemblies are not redistributed.
-Restore supports non-Windows environments, but a full build requires the Revit
-API assemblies; running the add-in requires Revit.
-
-Output is in `BlockToFamily\bin\Release\net10.0-windows\`. On Windows, a
-best-effort post-build step copies `BlockToFamily.dll` and `BlockToFamily.addin`
-to `%AppData%\Autodesk\Revit\Addins\2027\`. Deployment failures produce warnings
-without failing the build. To disable automatic installation:
-
-```powershell
-dotnet build BlockToFamily.sln -c Release -p:DeployToRevit=false
-```
-
-For manual installation, create that Addins folder and copy both files from the
-output directory into it. Keep them together: the manifest uses the relative
-assembly path `BlockToFamily.dll`. Close Revit before replacing the DLL, then
-restart Revit to load the add-in. The manifest registers both the ribbon
-application and the External Tools command.
-
-## Usage
-
-1. Open a plan view with a DWG import or link and load the matching families.
-2. On the **Blocks** tab, in the **DWG** panel, run **Blocks → Families**.
-   The command is also available from **Add-Ins → External Tools**.
-3. Select the DWG import/link when prompted.
-4. Read the summary dialog for the placed instance count and unmatched block names.
-
-## Notes and limitations
-
-- Block names may appear as `file.dwg.BLOCKNAME`.
-  `DwgBlockReader.NormalizeName` strips the `.dwg.` prefix for matching.
-- Hosted families (doors, windows, face-based families) are not supported for
-  placement: the command does not supply a host. Use non-hosted families; matching
-  a hosted type may cause placement to fail.
-- Mirrored blocks are not mirrored; only their insertion point and rotation are used.
-- Re-running the command creates duplicates; existing instances are not tracked.
-- The DWG import transform accounts for units and scale, but instance Z is
-  flattened to the resolved level's elevation.
+### Automatic Deployment
+On Windows, building the project automatically copies `BlockToFamily.dll` and `BlockToFamily.addin` to:
+- **Revit 2025**: `%AppData%\Autodesk\Revit\Addins\2025\`
+- **Revit 2027**: `%AppData%\Autodesk\Revit\Addins\2027\`

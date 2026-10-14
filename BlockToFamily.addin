@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>BlockToFamily Ribbon Application</Name>
+    <Assembly>BlockToFamily.dll</Assembly>
+    <AddInId>9C5B4A81-3E20-4D6A-B812-6F1D0E4A9C23</AddInId>
+    <FullClassName>BlockToFamily.App</FullClassName>
+    <VendorId>ELNB</VendorId>
+    <VendorDescription>elnoble20 - Hector Rosario BIM Automation</VendorDescription>
+  </AddIn>
+  <AddIn Type="Command">
+    <Text>Blocks → Validate &amp; Place Families</Text>
+    <Description>Reads DWG block references, exports/validates against loaded Revit families, and places FamilyInstances on top of each block.</Description>
+    <Assembly>BlockToFamily.dll</Assembly>
+    <AddInId>7A3E1C52-9B4D-4F0E-8E1A-2B6C5D4E3F10</AddInId>
+    <FullClassName>BlockToFamily.PlaceFromBlocksCommand</FullClassName>
+    <VendorId>ELNB</VendorId>
+    <VendorDescription>elnoble20 - Hector Rosario BIM Automation</VendorDescription>
+  </AddIn>
+  <AddIn Type="Command">
+    <Text>Blocks → Export &amp; Validate CSV</Text>
+    <Description>Extracts DWG block names and coordinates to CSV with validation status against current Revit families.</Description>
+    <Assembly>BlockToFamily.dll</Assembly>
+    <AddInId>4D8B2F19-6C3A-4E11-9A50-1E7C8B3D2F64</AddInId>
+    <FullClassName>BlockToFamily.ExportBlocksCsvCommand</FullClassName>
+    <VendorId>ELNB</VendorId>
+    <VendorDescription>elnoble20 - Hector Rosario BIM Automation</VendorDescription>
+  </AddIn>
+</RevitAddIns>

@@ -1,0 +1,27 @@
+name: Build BlockToFamily Revit Add-in
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 and .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore BlockToFamily/BlockToFamily.csproj -p:UseNuGetRevitApi=true
+
+      - name: Build (.NET 8 / Revit 2025 & .NET 10 / Revit 2027)
+        run: dotnet build BlockToFamily/BlockToFamily.csproj --configuration Release --no-restore -p:UseNuGetRevitApi=true
